@@ -2,6 +2,7 @@ from datetime import datetime
 from glob import glob
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+import numpy as np
 
 
 # Вход: '2007-12-02 12:30:45:156, выход: '02.12.2007 12:30:45'
@@ -20,17 +21,26 @@ def duration(time_str_1, time_str_2):
     res = time_2 - time_1
     return res
 
+
+def main(FILE_NAME, show_graph=True):
+
+    I = []
+    U = []
+    P = []
+    ROWS_service = []
+    ROWS_datetime = []
+
+
 # Извлечение C и W
-def get_cw(column):
-    ROWS_b = ROWS_service[column].split(';')
-    buff = ROWS_b[2].strip()
-    C = float(  buff[buff.find('=') + 1:] )
-    buff = ROWS_b[3].strip()
-    W = float(  buff[buff.find('=') + 1:] )
-    return C, W
+    def get_cw(column):
+        ROWS_b = ROWS_service[column].split(';')
+        buff = ROWS_b[2].strip()
+        C = float(  buff[buff.find('=') + 1:] )
+        buff = ROWS_b[3].strip()
+        W = float(  buff[buff.find('=') + 1:] )
+        return C, W
 
 
-def main():
     with open(FILE_NAME, 'r') as text:
         n = 0
         for ROWS in text:
@@ -91,10 +101,13 @@ def main():
 
     ax1 = fig.add_subplot(gs[0, :])
     ax1.plot(range(len(U)), U)
+
+    #ax1.plot([0,0], [60000, 60000])
+    ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
+    
     ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
     ax1.set_ylabel('U, V')
     ax1.grid()
-    ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
 
     ax2 = fig.add_subplot(gs[1, :])
     ax2.plot(range(len(I)), I)
@@ -139,24 +152,34 @@ def main():
 
     fig.subplots_adjust(bottom=0.17)
 
-    plt.savefig("graph.png", format="png", bbox_inches="tight")
-    plt.show()
+    plt.savefig(FILE_NAME[:-4] + '.png', format='png', bbox_inches='tight')
+    
+    if show_graph:
+        plt.show()
 
 if __name__ == '__main__':
 
-    FILE_NAME = '2022-01-31_09-08.txt'
-
-    I = []
-    U = []
-    P = []
-    ROWS_service = []
-    ROWS_datetime = []
-
     # Список текстовых файлов в текущей папке
-    files_log = glob('*.txt')
+    FILE_NAME = glob('*.txt')
 
-    if len(files_log) == 0:
+    if len(FILE_NAME) == 0:
         print('Файлы логов не обнаружены')
         exit()
-
-    main()
+    elif len(FILE_NAME) == 1:
+        main(FILE_NAME[0])
+    elif len(FILE_NAME) == 2:
+        main(FILE_NAME[0])
+        main(FILE_NAME[1])
+    else:
+        file_name_exception = []
+        for i in range(len(FILE_NAME)):
+            try:
+                main(FILE_NAME[i], show_graph=False)
+            except:
+                print(f'Файл {FILE_NAME[i]} не обработан')
+                file_name_exception.append(FILE_NAME[i])
+                continue
+            print(f'Файл {FILE_NAME[i]} обработан')
+        print('Не удалось обработать следующие файлы: ')
+        for i in range(len(file_name_exception)):
+            print(f' - {file_name_exception[i]}')
