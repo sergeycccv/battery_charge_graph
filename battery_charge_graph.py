@@ -31,7 +31,7 @@ def main(FILE_NAME, show_graph=True):
     ROWS_datetime = []
 
 
-# Извлечение C и W
+    # Извлечение C и W
     def get_cw(column):
         ROWS_b = ROWS_service[column].split(';')
         buff = ROWS_b[2].strip()
@@ -83,19 +83,13 @@ def main(FILE_NAME, show_graph=True):
     duration_discharge = duration(datetime_begin_discharge, datetime_end_discharge)
     duration_charge = duration(datetime_begin_charge, datetime_end_charge)
 
-    fig = plt.figure(figsize=(10, 9))
+    fig = plt.figure(figsize=(11, 9.6))
 
     # Заголовок окна
     fig = plt.gcf()
     fig.canvas.manager.set_window_title(f'Анализ: {FILE_NAME}')
 
-    plt.suptitle(f'Тест: {n_batt} | Начало: {convert_datetime(datetime_begin_test)} ' \
-                f'| Конец: {convert_datetime(datetime_end_test)}', size=11, fontweight='bold', y=0.94)
-
-    # gs = GridSpec(ncols=2, nrows=2, figure=fig)
-    # ax1 = plt.subplot(gs[0, :])
-    # ax2 = fig.add_subplot(gs[1, 0])
-    # ax3 = fig.add_subplot(gs[1, 1])
+    plt.suptitle(f'Тест: {n_batt} | Файл лога: {FILE_NAME}', size=11, fontweight='bold', y=0.94)
 
     gs = GridSpec(ncols=2, nrows=3, figure=fig)
 
@@ -103,7 +97,7 @@ def main(FILE_NAME, show_graph=True):
     ax1.plot(range(len(U)), U)
 
     #ax1.plot([0,0], [60000, 60000])
-    ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
+    #ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
     
     ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
     ax1.set_ylabel('U, V')
@@ -119,36 +113,34 @@ def main(FILE_NAME, show_graph=True):
     ax3.set_ylabel('P, W')
     ax3.grid()
 
-    # C_recharge = get_cw(1)[0]
-    # W_recharge = get_cw(1)[1]
-    # C_discharge = get_cw(2)[0]
-    # W_discharge = get_cw(2)[1]
-    # C_charge = get_cw(3)[0]
-    # W_charge = get_cw(3)[1]
+    text_init = f'Начало теста: {convert_datetime(datetime_begin_test)} | '\
+                f'Конец теста: {convert_datetime(datetime_end_test)} | ' \
+                f'Длительность: {duration_test}'
+    plt.figtext(0.12, 0.008, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
     text_init = f'Подзаряд:\n' \
                 f'— начало: {convert_datetime(datetime_begin_recharge)}\n' \
                 f'— конец: {convert_datetime(datetime_end_recharge)}\n' \
-                f'— время: {duration_recharge}\n' \
+                f'— длительность: {duration_recharge}\n' \
                 f'— C = {get_cw(1)[0]} Ah\n' \
                 f'— W = {get_cw(1)[1]} Wh\n'
-    plt.figtext(0.12, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+    plt.figtext(0.12, 0.02, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
     text_init = f'Разряд:\n' \
                 f'— начало: {convert_datetime(datetime_begin_discharge)}\n' \
                 f'— конец: {convert_datetime(datetime_end_discharge)}\n' \
-                f'— время: {duration_discharge}\n' \
+                f'— длительность: {duration_discharge}\n' \
                 f'— C = {get_cw(2)[0]} Ah\n' \
                 f'— W = {get_cw(2)[1]} Wh\n'
-    plt.figtext(0.40, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+    plt.figtext(0.40, 0.02, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
     text_init = f'Заряд:\n' \
                 f'— начало: {convert_datetime(datetime_begin_charge)}\n' \
                 f'— конец: {convert_datetime(datetime_end_charge)}\n' \
-                f'— время: {duration_charge}\n' \
+                f'— длительность: {duration_charge}\n' \
                 f'— C = {get_cw(3)[0]} Ah\n' \
                 f'— W = {get_cw(3)[1]} Wh\n'
-    plt.figtext(0.68, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+    plt.figtext(0.68, 0.02, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
     fig.subplots_adjust(bottom=0.17)
 
@@ -156,7 +148,6 @@ def main(FILE_NAME, show_graph=True):
     
     if show_graph:
         plt.show()
-
 if __name__ == '__main__':
 
     # Список текстовых файлов в текущей папке
