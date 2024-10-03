@@ -41,22 +41,26 @@ def main(FILE_NAME, show_graph=True):
         return C, W
 
 
-    with open(FILE_NAME, 'r') as text:
-        n = 0
-        for ROWS in text:
-            if ROWS[0] != '+':
-                if ROWS != '\n':
-                    ROWS = ROWS.replace(' ', '').strip()
-                    ROWS = ROWS[:-1]
-                    ROWS = ROWS.split(';')
-                    I.append(float(ROWS[1]))
-                    U.append(float(ROWS[2]))
-                    P.append(float(ROWS[3]))
-                    ROWS_datetime.append(ROWS[0])
-                    n += 1
-            else:
-                # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
-                ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
+    def get_data(FILE_NAME):
+        with open(FILE_NAME, 'r') as text:
+            n = 0
+            for ROWS in text:
+                if ROWS[0] != '+':
+                    if ROWS != '\n':
+                        ROWS = ROWS.replace(' ', '').strip()
+                        ROWS = ROWS[:-1]
+                        ROWS = ROWS.split(';')
+                        I.append(float(ROWS[1]))
+                        U.append(float(ROWS[2]))
+                        P.append(float(ROWS[3]))
+                        ROWS_datetime.append(ROWS[0])
+                        n += 1
+                else:
+                    # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
+                    ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
+        return I, U, P, ROWS_service, ROWS_datetime
+
+    ---I, U, P, ROWS_service, ROWS_datetime = get_data(FILE_NAME)---
 
     # Номера аккумулятора из первой строки лога
     n_batt = ROWS_service[0]
