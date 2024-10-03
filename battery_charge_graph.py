@@ -1,16 +1,7 @@
 from datetime import datetime
-import os, fnmatch
 from glob import glob
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
-
-FILE_NAME = '2022-01-31_09-08.txt'
-
-I = []
-U = []
-P = []
-ROWS_service = []
-ROWS_datetime = []
 
 
 # Вход: '2007-12-02 12:30:45:156, выход: '02.12.2007 12:30:45'
@@ -39,122 +30,133 @@ def get_cw(column):
     return C, W
 
 
-# Список текстовых файлов в текущей папке
-files_log = glob('*.txt')
+def main():
+    with open(FILE_NAME, 'r') as text:
+        n = 0
+        for ROWS in text:
+            if ROWS[0] != '+':
+                if ROWS != '\n':
+                    ROWS = ROWS.replace(' ', '').strip()
+                    ROWS = ROWS[:-1]
+                    ROWS = ROWS.split(';')
+                    I.append(float(ROWS[1]))
+                    U.append(float(ROWS[2]))
+                    P.append(float(ROWS[3]))
+                    ROWS_datetime.append(ROWS[0])
+                    n += 1
+            else:
+                # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
+                ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
 
+    # Номера аккумулятора из первой строки лога
+    n_batt = ROWS_service[0]
+    n_batt = n_batt[n_batt.find('№') + 1 : n_batt.find(';', n_batt.find(';') + 1)]
 
-if len(files_log) == 0:
-    print('Файлы логов не обнаружены')
-    exit()
+    # Стартовое напряжение из первой строки лога
+    U_begin = ROWS_service[0]
+    U_begin = U_begin[U_begin.find('=') + 1 : ]
 
+    # Извлечение дат начала и конца тестирования, подзаряда, разряда, заряда
+    datetime_begin_test = ROWS_datetime[0]
+    datetime_end_test = ROWS_datetime[-1]
+    datetime_begin_recharge = ROWS_datetime[0]
+    ROWS_b = ROWS_service[1].split(';')
+    datetime_end_recharge = ROWS_datetime[int(ROWS_b[0]) - 1]
+    datetime_begin_discharge = ROWS_datetime[int(ROWS_b[0])]
+    ROWS_b = ROWS_service[2].split(';')
+    datetime_end_discharge = ROWS_datetime[int(ROWS_b[0]) - 1]
+    datetime_begin_charge = ROWS_datetime[int(ROWS_b[0])]
+    datetime_end_charge = ROWS_datetime[-1]
 
-with open(FILE_NAME, 'r') as text:
-    n = 0
-    for ROWS in text:
-        if ROWS[0] != '+':
-            if ROWS != '\n':
-                ROWS = ROWS.replace(' ', '').strip()
-                ROWS = ROWS[:-1]
-                ROWS = ROWS.split(';')
-                I.append(float(ROWS[1]))
-                U.append(float(ROWS[2]))
-                P.append(float(ROWS[3]))
-                ROWS_datetime.append(ROWS[0])
-                n += 1
-        else:
-            # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
-            ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
+    duration_test = duration(datetime_begin_test, datetime_end_test)
+    duration_recharge = duration(datetime_begin_recharge, datetime_end_recharge)
+    duration_discharge = duration(datetime_begin_discharge, datetime_end_discharge)
+    duration_charge = duration(datetime_begin_charge, datetime_end_charge)
 
-# Номера аккумулятора из первой строки лога
-n_batt = ROWS_service[0]
-n_batt = n_batt[n_batt.find('№') + 1 : n_batt.find(';', n_batt.find(';') + 1)]
+    fig = plt.figure(figsize=(10, 9))
 
-# Стартовое напряжение из первой строки лога
-U_begin = ROWS_service[0]
-U_begin = U_begin[U_begin.find('=') + 1 : ]
+    # Заголовок окна
+    fig = plt.gcf()
+    fig.canvas.manager.set_window_title(f'Анализ: {FILE_NAME}')
 
-# Извлечение дат начала и конца тестирования, подзаряда, разряда, заряда
-datetime_begin_test = ROWS_datetime[0]
-datetime_end_test = ROWS_datetime[-1]
-datetime_begin_recharge = ROWS_datetime[0]
-ROWS_b = ROWS_service[1].split(';')
-datetime_end_recharge = ROWS_datetime[int(ROWS_b[0]) - 1]
-datetime_begin_discharge = ROWS_datetime[int(ROWS_b[0])]
-ROWS_b = ROWS_service[2].split(';')
-datetime_end_discharge = ROWS_datetime[int(ROWS_b[0]) - 1]
-datetime_begin_charge = ROWS_datetime[int(ROWS_b[0])]
-datetime_end_charge = ROWS_datetime[-1]
+    plt.suptitle(f'Тест: {n_batt} | Начало: {convert_datetime(datetime_begin_test)} ' \
+                f'| Конец: {convert_datetime(datetime_end_test)}', size=11, fontweight='bold', y=0.94)
 
-duration_test = duration(datetime_begin_test, datetime_end_test)
-duration_recharge = duration(datetime_begin_recharge, datetime_end_recharge)
-duration_discharge = duration(datetime_begin_discharge, datetime_end_discharge)
-duration_charge = duration(datetime_begin_charge, datetime_end_charge)
+    # gs = GridSpec(ncols=2, nrows=2, figure=fig)
+    # ax1 = plt.subplot(gs[0, :])
+    # ax2 = fig.add_subplot(gs[1, 0])
+    # ax3 = fig.add_subplot(gs[1, 1])
 
-fig = plt.figure(figsize=(10, 9))
+    gs = GridSpec(ncols=2, nrows=3, figure=fig)
 
-# Заголовок окна
-fig = plt.gcf()
-fig.canvas.manager.set_window_title(f'Анализ: {FILE_NAME}')
+    ax1 = fig.add_subplot(gs[0, :])
+    ax1.plot(range(len(U)), U)
+    ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
+    ax1.set_ylabel('U, V')
+    ax1.grid()
+    ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
 
-plt.suptitle(f'Тест: {n_batt} | Начало: {convert_datetime(datetime_begin_test)} ' \
-             f'| Конец: {convert_datetime(datetime_end_test)}', size=11, fontweight='bold', y=0.94)
+    ax2 = fig.add_subplot(gs[1, :])
+    ax2.plot(range(len(I)), I)
+    ax2.set_ylabel('I, A')
+    ax2.grid()
 
-# gs = GridSpec(ncols=2, nrows=2, figure=fig)
-# ax1 = plt.subplot(gs[0, :])
-# ax2 = fig.add_subplot(gs[1, 0])
-# ax3 = fig.add_subplot(gs[1, 1])
+    ax3 = fig.add_subplot(gs[2, :])
+    ax3.plot(range(len(P)), P)
+    ax3.set_ylabel('P, W')
+    ax3.grid()
 
-gs = GridSpec(ncols=2, nrows=3, figure=fig)
+    # C_recharge = get_cw(1)[0]
+    # W_recharge = get_cw(1)[1]
+    # C_discharge = get_cw(2)[0]
+    # W_discharge = get_cw(2)[1]
+    # C_charge = get_cw(3)[0]
+    # W_charge = get_cw(3)[1]
 
-ax1 = fig.add_subplot(gs[0, :])
-ax1.plot(range(len(U)), U)
-ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
-ax1.set_ylabel('U, V')
-ax1.grid()
-ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
+    text_init = f'Подзаряд:\n' \
+                f'— начало: {convert_datetime(datetime_begin_recharge)}\n' \
+                f'— конец: {convert_datetime(datetime_end_recharge)}\n' \
+                f'— время: {duration_recharge}\n' \
+                f'— C = {get_cw(1)[0]} Ah\n' \
+                f'— W = {get_cw(1)[1]} Wh\n'
+    plt.figtext(0.12, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
-ax2 = fig.add_subplot(gs[1, :])
-ax2.plot(range(len(I)), I)
-ax2.set_ylabel('I, A')
-ax2.grid()
+    text_init = f'Разряд:\n' \
+                f'— начало: {convert_datetime(datetime_begin_discharge)}\n' \
+                f'— конец: {convert_datetime(datetime_end_discharge)}\n' \
+                f'— время: {duration_discharge}\n' \
+                f'— C = {get_cw(2)[0]} Ah\n' \
+                f'— W = {get_cw(2)[1]} Wh\n'
+    plt.figtext(0.40, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
-ax3 = fig.add_subplot(gs[2, :])
-ax3.plot(range(len(P)), P)
-ax3.set_ylabel('P, W')
-ax3.grid()
+    text_init = f'Заряд:\n' \
+                f'— начало: {convert_datetime(datetime_begin_charge)}\n' \
+                f'— конец: {convert_datetime(datetime_end_charge)}\n' \
+                f'— время: {duration_charge}\n' \
+                f'— C = {get_cw(3)[0]} Ah\n' \
+                f'— W = {get_cw(3)[1]} Wh\n'
+    plt.figtext(0.68, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
 
-# C_recharge = get_cw(1)[0]
-# W_recharge = get_cw(1)[1]
-# C_discharge = get_cw(2)[0]
-# W_discharge = get_cw(2)[1]
-# C_charge = get_cw(3)[0]
-# W_charge = get_cw(3)[1]
+    fig.subplots_adjust(bottom=0.17)
 
-text_init = f'Подзаряд:\n' \
-            f'— начало: {convert_datetime(datetime_begin_recharge)}\n' \
-            f'— конец: {convert_datetime(datetime_end_recharge)}\n' \
-            f'— время: {duration_recharge}\n' \
-            f'— C = {get_cw(1)[0]} Ah\n' \
-            f'— W = {get_cw(1)[1]} Wh\n'
-plt.figtext(0.12, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+    plt.savefig("graph.png", format="png", bbox_inches="tight")
+    plt.show()
 
-text_init = f'Разряд:\n' \
-            f'— начало: {convert_datetime(datetime_begin_discharge)}\n' \
-            f'— конец: {convert_datetime(datetime_end_discharge)}\n' \
-            f'— время: {duration_discharge}\n' \
-            f'— C = {get_cw(2)[0]} Ah\n' \
-            f'— W = {get_cw(2)[1]} Wh\n'
-plt.figtext(0.40, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+if __name__ == '__main__':
 
-text_init = f'Заряд:\n' \
-            f'— начало: {convert_datetime(datetime_begin_charge)}\n' \
-            f'— конец: {convert_datetime(datetime_end_charge)}\n' \
-            f'— время: {duration_charge}\n' \
-            f'— C = {get_cw(3)[0]} Ah\n' \
-            f'— W = {get_cw(3)[1]} Wh\n'
-plt.figtext(0.68, 0.01, text_init, wrap=True, horizontalalignment='left', fontsize=10)
+    FILE_NAME = '2022-01-31_09-08.txt'
 
-fig.subplots_adjust(bottom=0.17)
+    I = []
+    U = []
+    P = []
+    ROWS_service = []
+    ROWS_datetime = []
 
-plt.savefig("graph.png", format="png", bbox_inches="tight")
-plt.show()
+    # Список текстовых файлов в текущей папке
+    files_log = glob('*.txt')
+
+    if len(files_log) == 0:
+        print('Файлы логов не обнаружены')
+        exit()
+
+    main()
