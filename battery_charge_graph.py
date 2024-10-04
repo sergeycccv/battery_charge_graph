@@ -83,13 +83,28 @@ def main(FILE_NAME, show_graph=True):
                 datetime_begin_charge, datetime_end_charge, duration_test, duration_recharge,\
                     duration_discharge, duration_charge, n_batt
 
-    
-    I, U, P, U_begin, datetime_begin_test, datetime_end_test, datetime_begin_recharge,\
-            datetime_end_recharge, datetime_begin_discharge, datetime_end_discharge,\
-                datetime_begin_charge, datetime_end_charge, duration_test, duration_recharge,\
-                    duration_discharge, duration_charge, n_batt = get_data(FILE_NAME)
+    data = []
+    for i in range(0, len(FILE_NAME)):
+        data.append( get_data(FILE_NAME[i]) )
+        I = data[i][0]
+        U = data[i][1]
+        P = data[i][2]
+        U_begin = data[i][3]
+        datetime_begin_test = data[i][4]
+        datetime_end_test = data[i][5]
+        datetime_begin_recharge = data[i][6]
+        datetime_end_recharge = data[i][7]
+        datetime_begin_discharge = data[i][8]
+        datetime_end_discharge = data[i][9]
+        datetime_begin_charge = data[i][10]
+        datetime_end_charge = data[i][11]
+        duration_test = data[i][12]
+        duration_recharge = data[i][13]
+        duration_discharge = data[i][14]
+        duration_charge = data[i][15]
+        n_batt = data[i][16]
 
-
+    # Настройка графиков
     fig = plt.figure(figsize=(11, 9.6))
 
     # Заголовок окна
@@ -112,21 +127,19 @@ def main(FILE_NAME, show_graph=True):
     ax3.set_ylabel('P, W')
     ax3.grid()
 
-
     ax1.plot(range(len(U)), U)
     # ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
     ax2.plot(range(len(I)), I)
     ax3.plot(range(len(P)), P)
-    ax1.legend(ax1.get_lines(), [FILE_NAME, '60000 V'], loc='lower right')
+    ax1.legend(ax1.get_lines(), [FILE_NAME], loc='lower right')
 
-    
     text_init = f'{n_batt}:\n' \
                 f'— Файл лога: {FILE_NAME}\n'\
                 f'— Начало теста: {datetime_begin_test}\n'\
                 f'— Конец теста: {datetime_end_test}\n' \
                 f'— Длительность: {duration_test}\n' \
                 f'— U старт: {U_begin}'
-    plt.figtext(0.12, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
+    fig.text(0.12, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
 
     text_init = f'Подзаряд:\n' \
                 f'— начало: {datetime_begin_recharge}\n' \
@@ -134,7 +147,7 @@ def main(FILE_NAME, show_graph=True):
                 f'— длительность: {duration_recharge}\n' \
                 f'— C = {get_cw(1)[0]} Ah\n' \
                 f'— W = {get_cw(1)[1]} Wh'
-    plt.figtext(0.33, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
+    fig.text(0.33, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
 
     text_init = f'Разряд:\n' \
                 f'— начало: {datetime_begin_discharge}\n' \
@@ -142,7 +155,7 @@ def main(FILE_NAME, show_graph=True):
                 f'— длительность: {duration_discharge}\n' \
                 f'— C = {get_cw(2)[0]} Ah\n' \
                 f'— W = {get_cw(2)[1]} Wh'
-    plt.figtext(0.52, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
+    fig.text(0.52, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
 
     text_init = f'Заряд:\n' \
                 f'— начало: {datetime_begin_charge}\n' \
@@ -150,19 +163,17 @@ def main(FILE_NAME, show_graph=True):
                 f'— длительность: {duration_charge}\n' \
                 f'— C = {get_cw(3)[0]} Ah\n' \
                 f'— W = {get_cw(3)[1]} Wh'
-    plt.figtext(0.7, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
+    fig.text(0.7, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
 
     fig.subplots_adjust(top=0.9, bottom=0.04, left=0.07, right=0.98)
 
-    plt.savefig(FILE_NAME[:-4] + '.png', format='png', bbox_inches='tight')
+
+    fig.savefig(FILE_NAME.replace('.txt', '') + '.png', format='png', bbox_inches='tight')
     
     if show_graph:
         plt.show()
 
 if __name__ == '__main__':
-
-    locale.setlocale(category=locale.LC_ALL, locale='ru_RU.UTF-8')
 
     # Список текстовых файлов в текущей папке
     FILE_NAME = glob('*.txt')
@@ -171,10 +182,10 @@ if __name__ == '__main__':
         print('Файлы логов не обнаружены')
         exit()
     elif len(FILE_NAME) == 1:
-        main(FILE_NAME[0])
+        main(FILE_NAME)
     elif len(FILE_NAME) == 2:
-        main(FILE_NAME[0])
-        main(FILE_NAME[1])
+        main(FILE_NAME)
+        #main(FILE_NAME[1])
     else:
         file_name_exception = []
         for i in range(len(FILE_NAME)):
