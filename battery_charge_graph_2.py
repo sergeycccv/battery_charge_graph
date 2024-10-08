@@ -104,7 +104,7 @@ def main(FILE_NAME, show_graph=True):
         ax3.plot(range(n), data[2])
         ax1.legend(ax1.get_lines(), [i for i in FILE_NAME], loc='lower right')
 
-        if len(FILE_NAME) == 1:
+        if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
             fl = 0
         elif len(FILE_NAME) == 2:
             fl = 1
@@ -172,17 +172,40 @@ def main(FILE_NAME, show_graph=True):
     ax3.grid()
 
     data = []
-    for i in range(0, len(FILE_NAME)):
-        data.append( get_data(FILE_NAME[i]) )
+    # for i in range(0, len(FILE_NAME)):
+    #     data.append( get_data(FILE_NAME[i]) )
 
-    CW = get_cw(ROWS_service)
 
-    if len(FILE_NAME) == 1:
-        fl = [FILE_NAME[0]]
-        pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
-        graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+    if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
+
+        for i in range(0, len(FILE_NAME)):
+            # data.append( get_data(FILE_NAME[i]) )
+            # CW = get_cw(ROWS_service)
+            
+
+            data = [ get_data(FILE_NAME[i]) ]
+            CW = get_cw(ROWS_service)
+            fl = [FILE_NAME[i]]
+            pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]###################
+            graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+            # Сохранение результата в png
+            file_name_png = FILE_NAME[i].replace('.txt', '') +  '.png'
+            fig.savefig(file_name_png, format='png', bbox_inches='tight')
+
+            ax1.remove()
+            ax2.remove()
+            ax3.remove()
+            
+            data = []
+            CW = []
+            if show_graph:
+                plt.show()
 
     elif len(FILE_NAME) == 2:
+
+        for i in range(0, len(FILE_NAME)):
+            data.append( get_data(FILE_NAME[i]) )
+        CW = get_cw(ROWS_service)
 
         fl = [FILE_NAME[0]]
         pos_x_y = [(0.01, 0.92), (0.01, 0.84), (0.01, 0.76), (0.01, 0.68), (0.99, 0.01), (0.25, 0.99)]
@@ -192,11 +215,12 @@ def main(FILE_NAME, show_graph=True):
         pos_x_y = [(0.01, 0.57), (0.01, 0.49), (0.01, 0.41), (0.01, 0.33), (0.99, 0.01), (0.25, 0.99)]
         graph_diff_value(data[1], CW[1], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
-
-    if len(FILE_NAME) == 1:
-        file_name_png = FILE_NAME[0].replace('.txt', '') +  '.png'
-    elif len(FILE_NAME) == 2:
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
+
+    # if len(FILE_NAME) == 1:
+    #     file_name_png = FILE_NAME[0].replace('.txt', '') +  '.png'
+    # elif len(FILE_NAME) == 2:
+    #     file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
     fig.savefig(file_name_png, format='png', bbox_inches='tight')
     
     if show_graph:
