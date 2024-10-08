@@ -9,11 +9,9 @@ def main(FILE_NAME, show_graph=True):
 
     global ROWS_service
     ROWS_service = []
-    global ROWS_datetime
-    ROWS_datetime = []
 
 
-# Вход: '2007-12-02 12:30:45:156, выход: '02.12.2007 12:30:45'
+    # Вход: '2007-12-02 12:30:45:156, выход: '02.12.2007 12:30:45'
     def convert_datetime(str_datetime):
         str_datetime = str_datetime.replace('_', ' ')
         res_dt = datetime.strptime(str_datetime, '%Y.%m.%d %H:%M:%S:%f').strftime('%d.%m.%Y, %H:%M:%S')
@@ -22,14 +20,16 @@ def main(FILE_NAME, show_graph=True):
 
 
     # Извлечение C и W
-    def get_cw(column):
-        ROWS_b = ROWS_service[column].split(';')
-        buff = ROWS_b[2].strip()
-        C = float(  buff[buff.find('=') + 1:] )
-        buff = ROWS_b[3].strip()
-        W = float(  buff[buff.find('=') + 1:] )
-        print(ROWS_service)
-        return C, W
+    def get_cw(ROWS_service):
+        CW = []
+        for i in range(len(ROWS_service)):
+            CW.append([])
+            for j in range(1, len(ROWS_service[i])):
+                ROWS_b = ROWS_service[i][j].split(';')
+                buff1 = ROWS_b[2].strip()
+                buff2 = ROWS_b[3].strip()
+                CW[i].append([float(  buff1[buff1.find('=') + 1:] ), float(  buff2[buff2.find('=') + 1:] )])
+        return CW
 
 
     def get_data(FILE_NAME):
@@ -37,15 +37,12 @@ def main(FILE_NAME, show_graph=True):
         U = []
         P = []
 
-        global ROWS_service
-        global ROWS_datetime
+        ROWS_datetime = []
 
-        # if len(FILE_NAME) == 2:
-        ROWS_service.clear()-------------------
-        ROWS_datetime.clear()
-            
         with open(FILE_NAME, 'r') as text:
             n = 0
+            ns = len(ROWS_service)
+            ROWS_service.append([])
             for ROWS in text:
                 if ROWS[0] != '+':
                     if ROWS != '\n':
@@ -59,14 +56,14 @@ def main(FILE_NAME, show_graph=True):
                         n += 1
                 else:
                     # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
-                    ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
+                    ROWS_service[ns].append(str(n) + ';' + ROWS.strip().replace('+++', ''))
 
         # Номера аккумулятора из первой строки лога
-        n_batt = ROWS_service[0]
+        n_batt = ROWS_service[ns][0]
         n_batt = n_batt[n_batt.find('№') + 1 : n_batt.find(';', n_batt.find(';') + 1)]
 
         # Стартовое напряжение из первой строки лога
-        U_begin = ROWS_service[0]
+        U_begin = ROWS_service[ns][0]
         U_begin = U_begin[U_begin.find('=') + 1 : ]
 
         # Извлечение дат начала и конца тестирования, подзаряда, разряда, заряда и длительности
@@ -75,12 +72,12 @@ def main(FILE_NAME, show_graph=True):
         duration_test = datetime_end_test - datetime_begin_test
 
         datetime_begin_recharge = convert_datetime(ROWS_datetime[0])
-        ROWS_b = ROWS_service[1].split(';')
+        ROWS_b = ROWS_service[ns][1].split(';')
         datetime_end_recharge = convert_datetime(ROWS_datetime[int(ROWS_b[0]) - 1])
         duration_recharge = datetime_end_recharge - datetime_begin_recharge
 
         datetime_begin_discharge = convert_datetime(ROWS_datetime[int(ROWS_b[0])])
-        ROWS_b = ROWS_service[2].split(';')
+        ROWS_b = ROWS_service[ns][2].split(';')
         datetime_end_discharge = convert_datetime(ROWS_datetime[int(ROWS_b[0]) - 1])
         duration_discharge = datetime_end_discharge - datetime_begin_discharge
 
@@ -88,15 +85,66 @@ def main(FILE_NAME, show_graph=True):
         datetime_end_charge = convert_datetime(ROWS_datetime[-1])
         duration_charge = datetime_end_charge - datetime_begin_charge
 
-
         return I, U, P, U_begin, datetime_begin_test, datetime_end_test, datetime_begin_recharge,\
             datetime_end_recharge, datetime_begin_discharge, datetime_end_discharge,\
                 datetime_begin_charge, datetime_end_charge, duration_test, duration_recharge,\
                     duration_discharge, duration_charge, n_batt
 
-    data = []
-    for i in range(0, len(FILE_NAME)):
-        data.append( get_data(FILE_NAME[i]) )
+
+    '''
+    data: list — список значений U, I, P, дат и пр. информации для графиков
+    CW: list — список значений C и W для графиков
+    FILE_NAME: str — имя файла лога
+    fig: plt.figure — общее поле для графиков
+    ax1, ax2, ax3: plt.axes — поля для отдельных графиков
+    pos_x_y: list — список координат для расположения дополнительных подписей
+    '''
+    def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list):
+        n = len(data[0])
+        ax1.plot(range(n), data[1])
+        ax2.plot(range(n), data[0])
+        ax3.plot(range(n), data[2])
+        ax1.legend(ax1.get_lines(), [i for i in FILE_NAME], loc='lower right')
+
+        if len(FILE_NAME) == 1:
+            fl = 0
+        elif len(FILE_NAME) == 2:
+            fl = 1
+
+        text_init = f'{data[16]}:\n' \
+                    f'— Файл лога: {FILE_NAME[fl]}\n'\
+                    f'— Начало теста: {data[4]}\n'\
+                    f'— Конец теста: {data[5]}\n' \
+                    f'— Длительность: {data[12]}\n' \
+                    f'— U старт: {data[3]}'
+        fig.text(pos_x_y[0][0], pos_x_y[0][1], text_init, wrap=True, horizontalalignment='left', fontsize=7)
+
+        text_init = f'Подзаряд:\n' \
+                    f'— начало: {data[6]}\n' \
+                    f'— конец: {data[7]}\n' \
+                    f'— длительность: {data[13]}\n' \
+                    f'— C = {CW[0][0]} Ah\n' \
+                    f'— W = {CW[0][1]} Wh'
+        fig.text(pos_x_y[1][0], pos_x_y[1][1], text_init, wrap=True, horizontalalignment='left', fontsize=7)
+
+        text_init = f'Разряд:\n' \
+                    f'— начало: {data[8]}\n' \
+                    f'— конец: {data[9]}\n' \
+                    f'— длительность: {data[14]}\n' \
+                    f'— C = {CW[1][0]} Ah\n' \
+                    f'— W = {CW[1][1]} Wh'
+        fig.text(pos_x_y[2][0], pos_x_y[2][1], text_init, wrap=True, horizontalalignment='left', fontsize=7)
+
+        text_init = f'Заряд:\n' \
+                    f'— начало: {data[10]}\n' \
+                    f'— конец: {data[11]}\n' \
+                    f'— длительность: {data[15]}\n' \
+                    f'— C = {CW[2][0]} Ah\n' \
+                    f'— W = {CW[2][1]} Wh'
+        fig.text(pos_x_y[3][0], pos_x_y[3][1], text_init, wrap=True, horizontalalignment='left', fontsize=7)
+
+        fig.subplots_adjust(top=pos_x_y[4][0], bottom=pos_x_y[4][1], left=pos_x_y[5][0], right=pos_x_y[5][1])
+
 
     # Настройка графиков
     fig = plt.figure(figsize=(11, 9.6))
@@ -109,8 +157,6 @@ def main(FILE_NAME, show_graph=True):
         title_window = f'Анализ: {FILE_NAME[0]} и {FILE_NAME[1]}.'
     fig.canvas.manager.set_window_title(title_window)
     
-    # plt.suptitle(f'Тест: {n_batt} | Файл лога: {FILE_NAME}', size=11, fontweight='bold', y=0.94)
-
     gs = GridSpec(ncols=2, nrows=3, figure=fig)
 
     ax1 = fig.add_subplot(gs[0, :])
@@ -125,182 +171,26 @@ def main(FILE_NAME, show_graph=True):
     ax3.set_ylabel('P, W')
     ax3.grid()
 
+    data = []
+    for i in range(0, len(FILE_NAME)):
+        data.append( get_data(FILE_NAME[i]) )
+
+    CW = get_cw(ROWS_service)
+
     if len(FILE_NAME) == 1:
-
-        I = data[0][0]
-        U = data[0][1]
-        P = data[0][2]
-        U_begin = data[0][3]
-        datetime_begin_test = data[0][4]
-        datetime_end_test = data[0][5]
-        datetime_begin_recharge = data[0][6]
-        datetime_end_recharge = data[0][7]
-        datetime_begin_discharge = data[0][8]
-        datetime_end_discharge = data[0][9]
-        datetime_begin_charge = data[0][10]
-        datetime_end_charge = data[0][11]
-        duration_test = data[0][12]
-        duration_recharge = data[0][13]
-        duration_discharge = data[0][14]
-        duration_charge = data[0][15]
-        n_batt = data[0][16]
-        
-        n = len(I)
-        ax1.plot(range(n), U)
-        # ax1.set_title(f'Стартовое напряжение: {U_begin} V', x=0.2, size=10)
-        ax2.plot(range(n), I)
-        ax3.plot(range(n), P)
-        ax1.legend(ax1.get_lines(), [FILE_NAME[0]], loc='lower right')
-
-        text_init = f'{n_batt}:\n' \
-                    f'— Файл лога: {FILE_NAME}\n'\
-                    f'— Начало теста: {datetime_begin_test}\n'\
-                    f'— Конец теста: {datetime_end_test}\n' \
-                    f'— Длительность: {duration_test}\n' \
-                    f'— U старт: {U_begin}'
-        fig.text(0.12, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Подзаряд:\n' \
-                    f'— начало: {datetime_begin_recharge}\n' \
-                    f'— конец: {datetime_end_recharge}\n' \
-                    f'— длительность: {duration_recharge}\n' \
-                    f'— C = {get_cw(1)[0]} Ah\n' \
-                    f'— W = {get_cw(1)[1]} Wh'
-        fig.text(0.33, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Разряд:\n' \
-                    f'— начало: {datetime_begin_discharge}\n' \
-                    f'— конец: {datetime_end_discharge}\n' \
-                    f'— длительность: {duration_discharge}\n' \
-                    f'— C = {get_cw(2)[0]} Ah\n' \
-                    f'— W = {get_cw(2)[1]} Wh'
-        fig.text(0.52, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Заряд:\n' \
-                    f'— начало: {datetime_begin_charge}\n' \
-                    f'— конец: {datetime_end_charge}\n' \
-                    f'— длительность: {duration_charge}\n' \
-                    f'— C = {get_cw(3)[0]} Ah\n' \
-                    f'— W = {get_cw(3)[1]} Wh'
-        fig.text(0.7, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        fig.subplots_adjust(top=0.9, bottom=0.04, left=0.07, right=0.98)
+        fl = [FILE_NAME[0]]
+        pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
+        graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
     elif len(FILE_NAME) == 2:
 
-        I1 = data[0][0]
-        U1 = data[0][1]
-        P1 = data[0][2]
-        U_begin1 = data[0][3]
-        datetime_begin_test1 = data[0][4]
-        datetime_end_test1 = data[0][5]
-        datetime_begin_recharge1 = data[0][6]
-        datetime_end_recharge1 = data[0][7]
-        datetime_begin_discharge1 = data[0][8]
-        datetime_end_discharge1 = data[0][9]
-        datetime_begin_charge1 = data[0][10]
-        datetime_end_charge1 = data[0][11]
-        duration_test1 = data[0][12]
-        duration_recharge1 = data[0][13]
-        duration_discharge1 = data[0][14]
-        duration_charge1 = data[0][15]
-        n_batt1 = data[0][16]
+        fl = [FILE_NAME[0]]
+        pos_x_y = [(0.01, 0.92), (0.01, 0.84), (0.01, 0.76), (0.01, 0.68), (0.99, 0.01), (0.25, 0.99)]
+        graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
-        n = len(I1)
-        ax1.plot(range(n), U1)
-        ax2.plot(range(n), I1)
-        ax3.plot(range(n), P1)
-        # ax1.legend(ax1.get_lines(), [FILE_NAME[0]], loc='lower right')
-
-        text_init = f'{n_batt1}:\n' \
-                    f'— Файл лога: {FILE_NAME[0]}\n'\
-                    f'— Начало теста: {datetime_begin_test1}\n'\
-                    f'— Конец теста: {datetime_end_test1}\n' \
-                    f'— Длительность: {duration_test1}\n' \
-                    f'— U старт: {U_begin1}'
-        fig.text(0.01, 0.92, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Подзаряд:\n' \
-                    f'— начало: {datetime_begin_recharge1}\n' \
-                    f'— конец: {datetime_end_recharge1}\n' \
-                    f'— длительность: {duration_recharge1}\n' \
-                    f'— C = {get_cw(1)[0]} Ah\n' \
-                    f'— W = {get_cw(1)[1]} Wh'
-        fig.text(0.01, 0.84, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Разряд:\n' \
-                    f'— начало: {datetime_begin_discharge1}\n' \
-                    f'— конец: {datetime_end_discharge1}\n' \
-                    f'— длительность: {duration_discharge1}\n' \
-                    f'— C = {get_cw(2)[0]} Ah\n' \
-                    f'— W = {get_cw(2)[1]} Wh'
-        fig.text(0.01, 0.76, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Заряд:\n' \
-                    f'— начало: {datetime_begin_charge1}\n' \
-                    f'— конец: {datetime_end_charge1}\n' \
-                    f'— длительность: {duration_charge1}\n' \
-                    f'— C = {get_cw(3)[0]} Ah\n' \
-                    f'— W = {get_cw(3)[1]} Wh'
-        fig.text(0.01, 0.68, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        I2 = data[1][0]
-        U2 = data[1][1]
-        P2 = data[1][2]
-        U_begin2 = data[1][3]
-        datetime_begin_test2 = data[1][4]
-        datetime_end_test2 = data[1][5]
-        datetime_begin_recharge2 = data[1][6]
-        datetime_end_recharge2 = data[1][7]
-        datetime_begin_discharge2 = data[1][8]
-        datetime_end_discharge2 = data[1][9]
-        datetime_begin_charge2 = data[1][10]
-        datetime_end_charge2 = data[1][11]
-        duration_test2 = data[1][12]
-        duration_recharge2 = data[1][13]
-        duration_discharge2 = data[1][14]
-        duration_charge2 = data[1][15]
-        n_batt2 = data[1][16]
-
-        n = len(I2)
-        ax1.plot(range(n), U2)
-        ax2.plot(range(n), I2)
-        ax3.plot(range(n), P2)
-        ax1.legend(ax1.get_lines(), [FILE_NAME[0], FILE_NAME[1]], loc='lower right')
-
-        text_init = f'{n_batt2}:\n' \
-                    f'— Файл лога: {FILE_NAME[1]}\n'\
-                    f'— Начало теста: {datetime_begin_test2}\n'\
-                    f'— Конец теста: {datetime_end_test2}\n' \
-                    f'— Длительность: {duration_test2}\n' \
-                    f'— U старт: {U_begin2}'
-        fig.text(0.01, 0.57, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Подзаряд:\n' \
-                    f'— начало: {datetime_begin_recharge2}\n' \
-                    f'— конец: {datetime_end_recharge2}\n' \
-                    f'— длительность: {duration_recharge2}\n' \
-                    f'— C = {get_cw(1)[0]} Ah\n' \
-                    f'— W = {get_cw(1)[1]} Wh'
-        fig.text(0.01, 0.49, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Разряд:\n' \
-                    f'— начало: {datetime_begin_discharge2}\n' \
-                    f'— конец: {datetime_end_discharge2}\n' \
-                    f'— длительность: {duration_discharge2}\n' \
-                    f'— C = {get_cw(2)[0]} Ah\n' \
-                    f'— W = {get_cw(2)[1]} Wh'
-        fig.text(0.01, 0.41, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        text_init = f'Заряд:\n' \
-                    f'— начало: {datetime_begin_charge2}\n' \
-                    f'— конец: {datetime_end_charge2}\n' \
-                    f'— длительность: {duration_charge2}\n' \
-                    f'— C = {get_cw(3)[0]} Ah\n' \
-                    f'— W = {get_cw(3)[1]} Wh'
-        fig.text(0.01, 0.33, text_init, wrap=True, horizontalalignment='left', fontsize=7)
-
-        fig.subplots_adjust(top=0.99, bottom=0.01, left=0.25, right=0.99)
+        fl = [FILE_NAME[0], FILE_NAME[1]]
+        pos_x_y = [(0.01, 0.57), (0.01, 0.49), (0.01, 0.41), (0.01, 0.33), (0.99, 0.01), (0.25, 0.99)]
+        graph_diff_value(data[1], CW[1], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
 
     if len(FILE_NAME) == 1:
@@ -324,7 +214,6 @@ if __name__ == '__main__':
         main(FILE_NAME)
     elif len(FILE_NAME) == 2:
         main(FILE_NAME)
-        #main(FILE_NAME[1])
     else:
         file_name_exception = []
         for i in range(len(FILE_NAME)):
