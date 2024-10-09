@@ -99,13 +99,7 @@ def main(FILE_NAME, show_graph=True):
     '''
     def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list):
         n = len(data[0])
-    
-        ax1.cla()
-        ax2.cla()
-        ax3.cla()
-
-        # fig.clf()
-
+            
         ax1.grid()
         ax1.set_ylabel('U, V')
         ax2.grid()
@@ -116,6 +110,7 @@ def main(FILE_NAME, show_graph=True):
         ax1.plot(range(n), data[1])
         ax2.plot(range(n), data[0])
         ax3.plot(range(n), data[2])
+
         ax1.legend(ax1.get_lines(), [i for i in FILE_NAME], loc='lower right')
 
         if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
@@ -175,12 +170,22 @@ def main(FILE_NAME, show_graph=True):
     ax1 = fig.add_subplot(gs[0, :])
     ax2 = fig.add_subplot(gs[1, :])
     ax3 = fig.add_subplot(gs[2, :])
+    ax1.grid()
+    ax1.set_ylabel('U, V')
+    ax2.grid()
+    ax2.set_ylabel('I, A')
+    ax3.grid()
+    ax3.set_ylabel('P, W')
 
     data = []
 
     if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
 
         for i in range(0, len(FILE_NAME)):
+
+            ax1.cla()
+            ax2.cla()
+            ax3.cla()
 
             data = [ get_data(FILE_NAME[i]) ]
             CW = get_cw(ROWS_service)
@@ -212,7 +217,7 @@ def main(FILE_NAME, show_graph=True):
 
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
 
-    fig.savefig(file_name_png, format='png', bbox_inches='tight')
+        fig.savefig(file_name_png, format='png', bbox_inches='tight')
     
     if show_graph:
         plt.show()
@@ -225,9 +230,7 @@ if __name__ == '__main__':
     if len(FILE_NAME) == 0:
         print('Файлы логов не обнаружены')
         exit()
-    elif len(FILE_NAME) == 1:
-        main(FILE_NAME)
-    elif len(FILE_NAME) == 2:
+    elif (len(FILE_NAME) == 1) or (len(FILE_NAME) == 2):
         main(FILE_NAME)
     else:
         main(FILE_NAME, show_graph=False)
