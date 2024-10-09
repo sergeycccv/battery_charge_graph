@@ -99,12 +99,21 @@ def main(FILE_NAME, show_graph=True):
     '''
     def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list):
         n = len(data[0])
+            
+        ax1.grid()
+        ax1.set_ylabel('U, V')
+        ax2.grid()
+        ax2.set_ylabel('I, A')
+        ax3.grid()
+        ax3.set_ylabel('P, W')
+
         ax1.plot(range(n), data[1])
         ax2.plot(range(n), data[0])
         ax3.plot(range(n), data[2])
+
         ax1.legend(ax1.get_lines(), [i for i in FILE_NAME], loc='lower right')
 
-        if len(FILE_NAME) == 1:
+        if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
             fl = 0
         elif len(FILE_NAME) == 2:
             fl = 1
@@ -158,31 +167,58 @@ def main(FILE_NAME, show_graph=True):
     fig.canvas.manager.set_window_title(title_window)
     
     gs = GridSpec(ncols=2, nrows=3, figure=fig)
-
     ax1 = fig.add_subplot(gs[0, :])
-    ax1.set_ylabel('U, V')
-    ax1.grid()
-
     ax2 = fig.add_subplot(gs[1, :])
-    ax2.set_ylabel('I, A')
-    ax2.grid()
-
     ax3 = fig.add_subplot(gs[2, :])
-    ax3.set_ylabel('P, W')
+    ax1.grid()
+    ax1.set_ylabel('U, V')
+    ax2.grid()
+    ax2.set_ylabel('I, A')
     ax3.grid()
+    ax3.set_ylabel('P, W')
 
     data = []
-    for i in range(0, len(FILE_NAME)):
-        data.append( get_data(FILE_NAME[i]) )
 
-    CW = get_cw(ROWS_service)
+    if (len(FILE_NAME) == 1) or (len(FILE_NAME) > 2):
 
-    if len(FILE_NAME) == 1:
-        fl = [FILE_NAME[0]]
-        pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
-        graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        for i in range(0, len(FILE_NAME)):
+
+            ax1.cla()
+            ax2.cla()
+            ax3.cla()
+            del plt.gcf().texts[:]
+
+            try:
+                data = [ get_data(FILE_NAME[i]) ]
+            except:
+                print(f'Файл {FILE_NAME[i]} не обработан')
+                continue
+            print(f'Файл {FILE_NAME[i]} обработан')
+
+            CW = get_cw(ROWS_service)
+            fl = [FILE_NAME[i]]
+            pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
+            graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+
+            # Сохранение результата в png
+            file_name_png = FILE_NAME[i].replace('.txt', '') +  '.png'
+            fig.savefig(file_name_png, format='png', bbox_inches='tight')
+
+            data = []
+            CW = []
+            if show_graph:
+                plt.show()
 
     elif len(FILE_NAME) == 2:
+
+        for i in range(0, len(FILE_NAME)):
+            try:
+                data.append( get_data(FILE_NAME[i]) )
+            except:
+                print(f'Файл {FILE_NAME[i]} не обработан')
+                exit()
+        
+        CW = get_cw(ROWS_service)
 
         fl = [FILE_NAME[0]]
         pos_x_y = [(0.01, 0.92), (0.01, 0.84), (0.01, 0.76), (0.01, 0.68), (0.99, 0.01), (0.25, 0.99)]
@@ -192,15 +228,11 @@ def main(FILE_NAME, show_graph=True):
         pos_x_y = [(0.01, 0.57), (0.01, 0.49), (0.01, 0.41), (0.01, 0.33), (0.99, 0.01), (0.25, 0.99)]
         graph_diff_value(data[1], CW[1], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
-
-    if len(FILE_NAME) == 1:
-        file_name_png = FILE_NAME[0].replace('.txt', '') +  '.png'
-    elif len(FILE_NAME) == 2:
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
-    fig.savefig(file_name_png, format='png', bbox_inches='tight')
+        fig.savefig(file_name_png, format='png', bbox_inches='tight')
     
-    if show_graph:
-        plt.show()
+        if show_graph:
+            plt.show()
 
 if __name__ == '__main__':
 
@@ -210,21 +242,7 @@ if __name__ == '__main__':
     if len(FILE_NAME) == 0:
         print('Файлы логов не обнаружены')
         exit()
-    elif len(FILE_NAME) == 1:
-        main(FILE_NAME)
-    elif len(FILE_NAME) == 2:
+    elif (len(FILE_NAME) == 1) or (len(FILE_NAME) == 2):
         main(FILE_NAME)
     else:
         main(FILE_NAME, show_graph=False)
-        # file_name_exception = []
-        # for i in range(len(FILE_NAME)):
-        #     try:
-        #         main(FILE_NAME[i], show_graph=False)
-        #     except:
-        #         print(f'Файл {FILE_NAME[i]} не обработан')
-        #         file_name_exception.append(FILE_NAME[i])
-        #         continue
-        #     print(f'Файл {FILE_NAME[i]} обработан')
-        # print('Не удалось обработать следующие файлы: ')
-        # for i in range(len(file_name_exception)):
-        #     print(f' - {file_name_exception[i]}')

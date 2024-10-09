@@ -1,11 +1,4 @@
-2.py
-*.pdf
-*.txt
-*.txt-
-*.url
-*.rar
-*.png
-
+temp
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
