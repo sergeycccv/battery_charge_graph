@@ -186,6 +186,7 @@ def main(FILE_NAME, show_graph=True):
             ax1.cla()
             ax2.cla()
             ax3.cla()
+            del plt.gcf().texts[:]
 
             data = [ get_data(FILE_NAME[i]) ]
             CW = get_cw(ROWS_service)
