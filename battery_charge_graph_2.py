@@ -188,11 +188,18 @@ def main(FILE_NAME, show_graph=True):
             ax3.cla()
             del plt.gcf().texts[:]
 
-            data = [ get_data(FILE_NAME[i]) ]
+            try:
+                data = [ get_data(FILE_NAME[i]) ]
+            except:
+                print(f'Файл {FILE_NAME[i]} не обработан')
+                continue
+            print(f'Файл {FILE_NAME[i]} обработан')
+
             CW = get_cw(ROWS_service)
             fl = [FILE_NAME[i]]
             pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
             graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+
             # Сохранение результата в png
             file_name_png = FILE_NAME[i].replace('.txt', '') +  '.png'
             fig.savefig(file_name_png, format='png', bbox_inches='tight')
@@ -205,7 +212,12 @@ def main(FILE_NAME, show_graph=True):
     elif len(FILE_NAME) == 2:
 
         for i in range(0, len(FILE_NAME)):
-            data.append( get_data(FILE_NAME[i]) )
+            try:
+                data.append( get_data(FILE_NAME[i]) )
+            except:
+                print(f'Файл {FILE_NAME[i]} не обработан')
+                exit()
+        
         CW = get_cw(ROWS_service)
 
         fl = [FILE_NAME[0]]
@@ -217,11 +229,10 @@ def main(FILE_NAME, show_graph=True):
         graph_diff_value(data[1], CW[1], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
 
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
-
         fig.savefig(file_name_png, format='png', bbox_inches='tight')
     
-    if show_graph:
-        plt.show()
+        if show_graph:
+            plt.show()
 
 if __name__ == '__main__':
 
@@ -235,15 +246,3 @@ if __name__ == '__main__':
         main(FILE_NAME)
     else:
         main(FILE_NAME, show_graph=False)
-        # file_name_exception = []
-        # for i in range(len(FILE_NAME)):
-        #     try:
-        #         main(FILE_NAME[i], show_graph=False)
-        #     except:
-        #         print(f'Файл {FILE_NAME[i]} не обработан')
-        #         file_name_exception.append(FILE_NAME[i])
-        #         continue
-        #     print(f'Файл {FILE_NAME[i]} обработан')
-        # print('Не удалось обработать следующие файлы: ')
-        # for i in range(len(file_name_exception)):
-        #     print(f' - {file_name_exception[i]}')
