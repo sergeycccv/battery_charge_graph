@@ -20,13 +20,12 @@ def main(FILE_NAME, show_graph=True):
     # Извлечение C и W
     def get_cw(ROWS_service):
         CW = []
-        for i in range(len(ROWS_service)):
-            CW.append([])
-            for j in range(1, len(ROWS_service[i])):
-                ROWS_b = ROWS_service[i][j].split(';')
-                buff1 = ROWS_b[2].strip()
-                buff2 = ROWS_b[3].strip()
-                CW[i].append([float(  buff1[buff1.find('=') + 1:] ), float(  buff2[buff2.find('=') + 1:] )])
+        ROWS_b = []
+        for i in range(1, len(ROWS_service)):
+            ROWS_b = ROWS_service[i].split(';')
+            buff1 = ROWS_b[2].strip()
+            buff2 = ROWS_b[3].strip()
+            CW.append([float(  buff1[buff1.find('=') + 1:] ), float(  buff2[buff2.find('=') + 1:] )])
         return CW
 
 
@@ -39,8 +38,6 @@ def main(FILE_NAME, show_graph=True):
 
         with open(FILE_NAME, 'r') as text:
             n = 0
-            ns = len(ROWS_service)
-            ROWS_service.append([])
             for ROWS in text:
                 if ROWS[0] != '+':
                     if ROWS != '\n':
@@ -54,14 +51,15 @@ def main(FILE_NAME, show_graph=True):
                         n += 1
                 else:
                     # Запоминаем строку, хранящую дату/время начала подзаряда, заряда, разряда
-                    ROWS_service[ns].append(str(n) + ';' + ROWS.strip().replace('+++', ''))
+                    ROWS_service.append(str(n) + ';' + ROWS.strip().replace('+++', ''))
 
+        
         # Номера аккумулятора из первой строки лога
-        n_batt = ROWS_service[ns][0]
+        n_batt = ROWS_service[0]
         n_batt = n_batt[n_batt.find('№') + 1 : n_batt.find(';', n_batt.find(';') + 1)]
 
         # Стартовое напряжение из первой строки лога
-        U_begin = ROWS_service[ns][0]
+        U_begin = ROWS_service[0]
         U_begin = U_begin[U_begin.find('=') + 1 : ]
 
         # Извлечение дат начала и конца тестирования, подзаряда, разряда, заряда и длительности
@@ -70,12 +68,12 @@ def main(FILE_NAME, show_graph=True):
         duration_test = datetime_end_test - datetime_begin_test
 
         datetime_begin_recharge = convert_datetime(ROWS_datetime[0])
-        ROWS_b = ROWS_service[ns][1].split(';')
+        ROWS_b = ROWS_service[1].split(';')
         datetime_end_recharge = convert_datetime(ROWS_datetime[int(ROWS_b[0]) - 1])
         duration_recharge = datetime_end_recharge - datetime_begin_recharge
 
         datetime_begin_discharge = convert_datetime(ROWS_datetime[int(ROWS_b[0])])
-        ROWS_b = ROWS_service[ns][2].split(';')
+        ROWS_b = ROWS_service[2].split(';')
         datetime_end_discharge = convert_datetime(ROWS_datetime[int(ROWS_b[0]) - 1])
         duration_discharge = datetime_end_discharge - datetime_begin_discharge
 
@@ -196,9 +194,11 @@ def main(FILE_NAME, show_graph=True):
             print(f'Файл {FILE_NAME[i]} обработан')
 
             CW = get_cw(ROWS_service)
+
             fl = [FILE_NAME[i]]
             pos_x_y = [(0.12, 0.92), (0.33, 0.92), (0.52, 0.92), (0.7, 0.92), (0.9, 0.04), (0.07, 0.98)]
-            graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+            graph_diff_value(data[0], CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+            ROWS_service = []
 
             # Сохранение результата в png
             file_name_png = FILE_NAME[i].replace('.txt', '') +  '.png'
@@ -211,22 +211,39 @@ def main(FILE_NAME, show_graph=True):
 
     elif len(FILE_NAME) == 2:
 
-        for i in range(0, len(FILE_NAME)):
-            try:
-                data.append( get_data(FILE_NAME[i]) )
-            except:
-                print(f'Файл {FILE_NAME[i]} не обработан')
-                exit()
+##########################################################################################################
+        # offset = int(ROWS_service[1].split(';')[0])
+        # up = [0 for _ in range(offset)]
+        # up.extend(data[1])
+        # ax1.plot(range(n + offset), up)
+##########################################################################################################
+
+
+        try:
+            data = get_data(FILE_NAME[0])
+        except:
+            print(f'Файл {FILE_NAME[0]} не обработан')
+            exit()
         
         CW = get_cw(ROWS_service)
 
         fl = [FILE_NAME[0]]
         pos_x_y = [(0.01, 0.92), (0.01, 0.84), (0.01, 0.76), (0.01, 0.68), (0.99, 0.01), (0.25, 0.99)]
-        graph_diff_value(data[0], CW[0], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        graph_diff_value(data, CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        ROWS_service = []
+
+        try:
+            data = get_data(FILE_NAME[1])
+        except:
+            print(f'Файл {FILE_NAME[1]} не обработан')
+            exit()
+
+        CW = get_cw(ROWS_service)
 
         fl = [FILE_NAME[0], FILE_NAME[1]]
         pos_x_y = [(0.01, 0.57), (0.01, 0.49), (0.01, 0.41), (0.01, 0.33), (0.99, 0.01), (0.25, 0.99)]
-        graph_diff_value(data[1], CW[1], fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        graph_diff_value(data, CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        ROWS_service = []
 
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
         fig.savefig(file_name_png, format='png', bbox_inches='tight')
