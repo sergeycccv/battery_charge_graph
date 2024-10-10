@@ -6,6 +6,9 @@ from matplotlib.gridspec import GridSpec
 
 def main(FILE_NAME, show_graph=True):
 
+    # Нужно ли смещение при наложении графиков
+    OFFSET = True
+    
     ROWS_service = []
 
 
@@ -95,7 +98,7 @@ def main(FILE_NAME, show_graph=True):
     ax1, ax2, ax3: plt.axes — поля для отдельных графиков
     pos_x_y: list — список координат для расположения дополнительных подписей
     '''
-    def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list):
+    def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list, offset=0):
         n = len(data[0])
             
         ax1.grid()
@@ -105,9 +108,32 @@ def main(FILE_NAME, show_graph=True):
         ax3.grid()
         ax3.set_ylabel('P, W')
 
-        ax1.plot(range(n), data[1])
-        ax2.plot(range(n), data[0])
-        ax3.plot(range(n), data[2])
+        # Смещение графика вправо
+        offset_main = 0
+        if offset != 0:
+            for_offset2 = int(ROWS_service[1].split(';')[0])
+            offset_main = offset - for_offset2
+
+            up = [11 for _ in range(offset_main)]
+            up.extend(data[1])
+            data[1].clear()
+            data[1].extend(up)
+
+            up.clear()
+            up = [-0.8 for _ in range(offset_main)]
+            up.extend(data[0])
+            data[0].clear()
+            data[0].extend(up)
+
+            up.clear()
+            up = [0 for _ in range(offset_main)]
+            up.extend(data[2])
+            data[2].clear()
+            data[2].extend(up)
+
+        ax1.plot(range(n + offset_main), data[1])
+        ax2.plot(range(n + offset_main), data[0])
+        ax3.plot(range(n + offset_main), data[2])
 
         ax1.legend(ax1.get_lines(), [i for i in FILE_NAME], loc='lower right')
 
@@ -211,14 +237,6 @@ def main(FILE_NAME, show_graph=True):
 
     elif len(FILE_NAME) == 2:
 
-##########################################################################################################
-        # offset = int(ROWS_service[1].split(';')[0])
-        # up = [0 for _ in range(offset)]
-        # up.extend(data[1])
-        # ax1.plot(range(n + offset), up)
-##########################################################################################################
-
-
         try:
             data = get_data(FILE_NAME[0])
         except:
@@ -230,6 +248,12 @@ def main(FILE_NAME, show_graph=True):
         fl = [FILE_NAME[0]]
         pos_x_y = [(0.01, 0.92), (0.01, 0.84), (0.01, 0.76), (0.01, 0.68), (0.99, 0.01), (0.25, 0.99)]
         graph_diff_value(data, CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        
+        if OFFSET:
+            for_offset1 = int(ROWS_service[1].split(';')[0])
+        else:
+            for_offset1 = 0
+
         ROWS_service = []
 
         try:
@@ -242,7 +266,7 @@ def main(FILE_NAME, show_graph=True):
 
         fl = [FILE_NAME[0], FILE_NAME[1]]
         pos_x_y = [(0.01, 0.57), (0.01, 0.49), (0.01, 0.41), (0.01, 0.33), (0.99, 0.01), (0.25, 0.99)]
-        graph_diff_value(data, CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y)
+        graph_diff_value(data, CW, fl, fig=fig, ax1=ax1, ax2=ax2, ax3=ax3, pos_x_y=pos_x_y, offset=for_offset1)
         ROWS_service = []
 
         file_name_png = FILE_NAME[0].replace('.txt', '') + '_' + FILE_NAME[1].replace('.txt', '') + '.png'
@@ -259,7 +283,7 @@ if __name__ == '__main__':
     if len(FILE_NAME) == 0:
         print('Файлы логов не обнаружены')
         exit()
-    elif (len(FILE_NAME) == 1) or (len(FILE_NAME) == 2):
+    elif len(FILE_NAME) == 1 or (len(FILE_NAME) == 2):
         main(FILE_NAME)
     else:
         main(FILE_NAME, show_graph=False)
