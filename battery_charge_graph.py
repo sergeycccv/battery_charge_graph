@@ -6,14 +6,28 @@ from matplotlib.gridspec import GridSpec
 
 def main(FILE_NAME, show_graph=True):
 
-    # Нужно ли смещение при наложении графиков
+    '''
+    Указать, что нужно смещать график вправо.
+    '''
     OFFSET = True
     
+    '''
+    Список строк, содержащий информацию о дате/времени,
+    начала/конца тестирования, подзаряда, разряда, заряда.
+    '''
     ROWS_service = []
 
 
-    # Вход: '2007-12-02 12:30:45:156, выход: '02.12.2007 12:30:45'
     def convert_datetime(str_datetime):
+        '''
+        Конвертация строки дата/время из '%Y.%m.%d %H:%M:%S:%f' в '%d.%m.%Y, %H:%M:%S'.
+        
+        Args:
+            str_datetime (str): The datetime string to be converted.
+        
+        Returns:
+            datetime: The converted datetime object.
+        '''
         str_datetime = str_datetime.replace('_', ' ')
         res_dt = datetime.strptime(str_datetime, '%Y.%m.%d %H:%M:%S:%f').strftime('%d.%m.%Y, %H:%M:%S')
         res_dt = datetime.strptime(res_dt, '%d.%m.%Y, %H:%M:%S')
@@ -22,6 +36,16 @@ def main(FILE_NAME, show_graph=True):
 
     # Извлечение C и W
     def get_cw(ROWS_service):
+        '''
+        Функция для извлечения C и W из ROWS_service.
+        
+        Args:
+            ROWS_service (list): список строк, содержащих информацию о дате/времени 
+                                 начала/конца тестирования, подзаряда, разряда, заряда.
+        
+        Returns:
+            CW (list): список значений C и W.
+        '''
         CW = []
         ROWS_b = []
         for i in range(1, len(ROWS_service)):
@@ -33,6 +57,31 @@ def main(FILE_NAME, show_graph=True):
 
 
     def get_data(FILE_NAME):
+        '''
+        Функция для извлечения данных из текстового файла.
+        
+        Args:
+            FILE_NAME (str): имя текстового файла.
+        
+        Returns:
+            I (list): список значений силы тока.
+            U (list): список значений напряжения.
+            P (list): список значений мощности.
+            U_begin (str): стартовое напряжение.
+            datetime_begin_test (datetime): дата/время начала тестирования.
+            datetime_end_test (datetime): дата/время конца тестирования.
+            datetime_begin_recharge (datetime): дата/время начала подзаряда.
+            datetime_end_recharge (datetime): дата/время конца подзаряда.
+            datetime_begin_discharge (datetime): дата/время начала разряда.
+            datetime_end_discharge (datetime): дата/время конца разряда.
+            datetime_begin_charge (datetime): дата/время начала заряда.
+            datetime_end_charge (datetime): дата/время конца заряда.
+            duration_test (timedelta): длительность тестирования.
+            duration_recharge (timedelta): длительность подзаряда.
+            duration_discharge (timedelta): длительность разряда.
+            duration_charge (timedelta): длительность заряда.
+            n_batt (str): номер (идентификатор) аккумулятора.
+        '''
         I = []
         U = []
         P = []
@@ -90,15 +139,27 @@ def main(FILE_NAME, show_graph=True):
                     duration_discharge, duration_charge, n_batt
 
 
-    '''
-    data: list — список значений U, I, P, дат и пр. информации для графиков
-    CW: list — список значений C и W для графиков
-    FILE_NAME: str — имя файла лога
-    fig: plt.figure — общее поле для графиков
-    ax1, ax2, ax3: plt.axes — поля для отдельных графиков
-    pos_x_y: list — список координат для расположения дополнительных подписей
-    '''
+    # '''
+    # data: list — список значений U, I, P, дат и пр. информации для графиков
+    # CW: list — список значений C и W для графиков
+    # FILE_NAME: str — имя файла лога
+    # fig: plt.figure — общее поле для графиков
+    # ax1, ax2, ax3: plt.axes — поля для отдельных графиков
+    # pos_x_y: list — список координат для расположения дополнительных подписей
+    # '''
     def graph_diff_value(data: list, CW: list, FILE_NAME, fig, ax1, ax2, ax3, pos_x_y: list, offset=0):
+        '''
+        Функция для отрисовки графиков.
+        
+        Args:
+            data (list): список значений U, I, P, дат и пр. информации для графиков
+            CW (list): список значений C и W для графиков
+            FILE_NAME (str): имя файла лога
+            fig (plt.figure): общее поле для графиков
+            ax1, ax2, ax3 (plt.axes): поля для отдельных графиков
+            pos_x_y (list): список координат для расположения дополнительных подписей
+            offset (int): смещение графика вправо
+        '''
         n = len(data[0])
             
         ax1.grid()
